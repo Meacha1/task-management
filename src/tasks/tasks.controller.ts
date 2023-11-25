@@ -6,24 +6,25 @@ import {
   Param,
   Delete,
   Put,
+  Query,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { Task, TaskStatus } from './task.model';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { GetTaskFilterDto } from './dto/get-task-filter.dto';
 
 @Controller('tasks')
 export class TasksController {
-  /**
-   * The constructor function takes a TasksService as a parameter and assigns it to the tasksService
-   * property.
-   * @param {TasksService} tasksService - The tasksService parameter is an instance of the TasksService
-   * class. It is a dependency that is injected into the constructor of the current class. This allows
-   * the current class to access and use the methods and properties of the TasksService class.
-   */
   constructor(private tasksService: TasksService) {}
 
   @Get()
-  getAllTasks(): Task[] {
+  getTasks(@Query() filterDto: GetTaskFilterDto): Task[] {
+    if (Object.keys(filterDto).length) {
+      // if there is any query parameters
+      return this.tasksService.getTasksWithFilters(filterDto);
+    } else {
+      return this.tasksService.getAllTasks();
+    }
     return this.tasksService.getAllTasks();
   }
 
