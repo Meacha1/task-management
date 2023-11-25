@@ -7,11 +7,13 @@ import {
   Delete,
   Put,
   Query,
+  UsePipes,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { Task, TaskStatus } from './task.model';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { GetTaskFilterDto } from './dto/get-task-filter.dto';
+import { ValidationPipe } from '@nestjs/common/pipes/validation.pipe';
 
 @Controller('tasks')
 export class TasksController {
@@ -39,6 +41,7 @@ export class TasksController {
   }
 
   @Post()
+  @UsePipes(ValidationPipe)
   createTask(@Body() createTaskDto: CreateTaskDto): Task {
     return this.tasksService.createTask(createTaskDto);
   }
