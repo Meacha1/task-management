@@ -15,36 +15,26 @@ export class TasksService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  // getAllTasks(): Task[] {
-  //   return this.tasks;
-  // }
+ async getTasks(filterDto: GetTaskFilterDto): Promise<Task[]>  {
+    const { status, search } = filterDto;
+    const query = await this.entityManager.createQueryBuilder(Task, 'task');
+    if (status) {
+      query.andWhere('task.status = :status', { status });
+    }
+    if (search) {
+      query.andWhere(
+        // if title or description contains the search term, return true
+        // LOWER() converts the search term to lowercase before comparing it to the task title and description
+        // LIKE() performs a case-insensitive search for the search term in the task title and description
+        // %search% is a placeholder for the search term that will be replaced with the actual search term in the query
+        // % is a wildcard character that matches any character or number of characters before and after the search term
+        '(LOWER(task.title) LIKE LOWER(:search) OR LOWER(task.description) LIKE LOWER(:search))',
+        { search: `%${search}%` },
+      );
+    }
+    return query.getMany();
+  }
 
-  // getTasksWithFilters(filterDto: GetTaskFilterDto): Task[] {
-  //   // destructuring
-  //   const { status, search } = filterDto;
-
-  //   // define a temporary array to hold the result
-  //   let tasks: Task[] = this.getAllTasks();
-
-  //   // do something with status
-  //   if (status) {
-  //     tasks = tasks.filter((task: Task) => task.status === status); // filter out the tasks with the given status and return the remaining tasks
-  //   }
-
-  //   // do something with search
-  //   if (search) {
-  //     tasks = tasks.filter((task: Task) => {
-  //       // filter out the tasks with the given search term and return the remaining tasks
-  //       if (task.title.includes(search) || task.description.includes(search)) {
-  //         return true;
-  //       }
-  //       return false;
-  //     });
-  //   }
-
-  //   // return the result
-  //   return tasks;
-  // }
 
   async getTaskById(id: any): Promise<Task | undefined> {
     const found = await this.entityManager.findOne(Task, { where: { id } });
@@ -66,14 +56,21 @@ async createTask(createTaskDto: CreateTaskDto): Promise<Task> {
   return task;
 }
 
-  // deleteTask(id: string): void {
-  //   const found = this.getTaskById(id); // get the task with the given id
-  //   if (!found) {
-  //     throw new NotFoundException();
-  //   } else {
-  //     this.tasks = this.tasks.splice(this.tasks.indexOf(found), 1); // remove the task from the array and return the remaining tasks
-  //   }
-  // }
+async deleteTask(id: number): Promise<void> {
+  const result = await this.entityManager.delete(Task, id);
+  if (result.affected === 0) {
+    throw new NotFoundException(`Task with ID "${id}" not found`);
+  } else {
+    console.log('Task deleted successfully');
+  }
+}
+
+async updateTaskStatus(id: number, status: TaskStatus): Promise<Task> {
+  const task = await this.getTaskById(id);
+  task.status = status;
+  await task.save();
+  return task;
+}
 
   // patchTask(id: string, status: TaskStatus): Task {
   //   const task = this.getTaskById(id);
