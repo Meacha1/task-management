@@ -9,6 +9,7 @@ import {
   Query,
   UsePipes,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { TaskStatus } from './task-status.enum';'./task-status.enum';
@@ -17,8 +18,10 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { GetTaskFilterDto } from './dto/get-task-filter.dto';
 import { ValidationPipe } from '@nestjs/common/pipes/validation.pipe';
 import { TaskStatusValidationPipe } from './pipes/task-status-validation.pipe';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('tasks')
+@UseGuards(AuthGuard())
 export class TasksController {
   constructor(private tasksService: TasksService) {}
 
