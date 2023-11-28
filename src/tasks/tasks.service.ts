@@ -7,6 +7,7 @@ import { TaskRepository } from './task.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
+import { User } from 'src/auth/user.entity';
 
 @Injectable()
 export class TasksService {
@@ -15,9 +16,10 @@ export class TasksService {
     private readonly entityManager: EntityManager,
   ) {}
 
- async getTasks(filterDto: GetTaskFilterDto): Promise<Task[]>  {
+ async getTasks(filterDto: GetTaskFilterDto, user: User): Promise<Task[]>  {
     const { status, search } = filterDto;
     const query = await this.entityManager.createQueryBuilder(Task, 'task');
+    query.where('task.userId = :userId', { userId: user.id });
     if (status) {
       query.andWhere('task.status = :status', { status });
     }
@@ -36,8 +38,8 @@ export class TasksService {
   }
 
 
-  async getTaskById(id: any): Promise<Task | undefined> {
-    const found = await this.entityManager.findOne(Task, { where: { id } });
+  async getTaskById(id: number, user: User): Promise<Task | undefined> {
+    const found = await this.entityManager.findOne(Task, { where: { id, userId: user.id } });
   
     if (!found) {
       throw new NotFoundException(`Task with ID "${id}" not found`);
@@ -46,18 +48,20 @@ export class TasksService {
     }
   }
 
-async createTask(createTaskDto: CreateTaskDto): Promise<Task> {
+async createTask(createTaskDto: CreateTaskDto, user: User): Promise<Task> {
   const { title, description } = createTaskDto;
   const task = new Task();
   task.title = title;
   task.description = description;
   task.status = TaskStatus.OPEN;
+  task.user = user;
   await task.save(); // save the task to the database
+  delete task.user; // remove the user property from the task object that will be returned
   return task;
 }
 
-async deleteTask(id: number): Promise<void> {
-  const result = await this.entityManager.delete(Task, id);
+async deleteTask(id: number, user: User): Promise<void> {
+  const result = await this.entityManager.delete(Task, { id, userId: user.id });
   if (result.affected === 0) {
     throw new NotFoundException(`Task with ID "${id}" not found`);
   } else {
@@ -65,8 +69,8 @@ async deleteTask(id: number): Promise<void> {
   }
 }
 
-async updateTaskStatus(id: number, status: TaskStatus): Promise<Task> {
-  const task = await this.getTaskById(id);
+async updateTaskStatus(id: number, status: TaskStatus, user: User): Promise<Task> {
+  const task = await this.getTaskById(id, user);
   task.status = status;
   await task.save();
   return task;
