@@ -3,8 +3,6 @@ import { TaskStatus } from './task-status.enum';
 import { Task } from './task.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { GetTaskFilterDto } from './dto/get-task-filter.dto';
-import { TaskRepository } from './task.repository';
-import { InjectRepository } from '@nestjs/typeorm';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { User } from 'src/auth/user.entity';
@@ -25,11 +23,6 @@ export class TasksService {
     }
     if (search) {
       query.andWhere(
-        // if title or description contains the search term, return true
-        // LOWER() converts the search term to lowercase before comparing it to the task title and description
-        // LIKE() performs a case-insensitive search for the search term in the task title and description
-        // %search% is a placeholder for the search term that will be replaced with the actual search term in the query
-        // % is a wildcard character that matches any character or number of characters before and after the search term
         '(LOWER(task.title) LIKE LOWER(:search) OR LOWER(task.description) LIKE LOWER(:search))',
         { search: `%${search}%` },
       );
